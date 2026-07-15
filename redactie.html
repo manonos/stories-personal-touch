@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NOS Stories: PoC personal touch</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #6530D0;
+      --bg-dark:   #4D22A8;
+      --bg-darker: #3A1880;
+      --white:     #ffffff;
+      --dim:       rgba(255,255,255,.65);
+      --dim2:      rgba(255,255,255,.35);
+      --overlay:   rgba(0,0,0,.18);
+      --yellow:    #fadf4b;
+      --red:       #e8001d;
+      --radius:    12px;
+      --radius-lg: 16px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--white);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── TOPBAR ─────────────────────────────────────────── */
+    .topbar {
+      display: flex; align-items: center;
+      padding: 14px 28px;
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(80,35,195,.55);
+      backdrop-filter: blur(16px);
+    }
+    .logo-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: none;
+      border-radius: 10px;
+      padding: 6px 12px 6px 6px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .nos-badge {
+      font-weight: 900; font-size: 22px;
+      letter-spacing: -.5px;
+      color: #fff;
+      line-height: 1;
+    }
+    .nos-badge .o { color: var(--red); }
+    .stories-word {
+      font-size: 18px; font-weight: 700;
+      color: rgba(255,255,255,.9); letter-spacing: -.2px;
+    }
+    .topbar-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+    .survey-bar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 8px 28px;
+    }
+    .survey-btn {
+      display: inline-block;
+      background: #FFD700;
+      color: #1a0a3c;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: -.1px;
+      padding: 7px 18px;
+      border-radius: 20px;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: background .15s, transform .1s;
+    }
+    .survey-btn:hover { background: #ffe033; transform: translateY(-1px); }
+    .icon-btn {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: rgba(255,255,255,.18);
+      border: none; cursor: pointer;
+      display: grid; place-items: center;
+      color: var(--white);
+      transition: background .15s;
+      text-decoration: none;
+    }
+    .icon-btn:hover { background: rgba(255,255,255,.28); }
+    .icon-btn svg { width: 18px; height: 18px; fill: currentColor; }
+
+    /* ── VIEWS ──────────────────────────────────────────── */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ═══════════════════════════════════════════════════════
+       OVERVIEW VIEW
+    ═══════════════════════════════════════════════════════ */
+
+    /* hero decoration */
+    .hero-deco {
+      position: relative;
+      height: 150px;
+      overflow: hidden;
+      pointer-events: none;
+      user-select: none;
+    }
+    .hero-deco svg.blobs {
+      position: absolute;
+      inset: 0; width: 100%; height: 100%;
+    }
+    .sparkle {
+      position: absolute;
+      fill: rgba(255,255,255,.75);
+    }
+    .sparkle-tl { top: 28%; left: 4%; width: 28px; }
+    .sparkle-br { bottom: 14%; right: 4%; width: 22px; }
+
+    /* filters */
+    .filters {
+      padding: 0 28px 28px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .filter-pill {
+      font-size: 13px; font-weight: 600;
+      padding: 8px 18px;
+      border-radius: 50px;
+      border: none; cursor: pointer;
+      background: rgba(0,0,0,.22);
+      color: var(--white);
+      transition: background .15s;
+    }
+    .filter-pill:hover { background: rgba(0,0,0,.35); }
+    .filter-pill.active {
+      background: var(--bg-darker);
+      box-shadow: 0 0 0 1px rgba(255,255,255,.15);
+    }
+    .filter-sep {
+      width: 1px; height: 22px;
+      background: rgba(255,255,255,.2);
+      margin: 0 4px;
+      flex-shrink: 0;
+    }
+
+    /* video grid */
+    .video-grid {
+      padding: 0 28px 60px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px 18px;
+    }
+
+    .vid-card {
+      cursor: pointer;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      transition: transform .2s;
+    }
+    .vid-card:hover { transform: translateY(-3px); }
+
+    .vid-thumb {
+      position: relative;
+      aspect-ratio: 16/9;
+      overflow: hidden;
+      border-radius: var(--radius-lg);
+      background: var(--bg-dark);
+    }
+    .vid-thumb img {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+    }
+    .vid-nos {
+      position: absolute; top: 10px; left: 10px;
+      background: var(--red);
+      color: var(--white);
+      font-size: 11px; font-weight: 900;
+      padding: 2px 6px; border-radius: 4px;
+      letter-spacing: .3px;
+    }
+    .vid-category-badge {
+      position: absolute; bottom: 10px; left: 10px;
+      background: rgba(0,0,0,.72);
+      color: var(--white);
+      font-size: 12px; font-weight: 700;
+      padding: 4px 10px; border-radius: 6px;
+    }
+    .vid-meta {
+      padding: 10px 4px 0;
+    }
+    .vid-meta-row {
+      font-size: 11px;
+      color: var(--dim);
+      margin-bottom: 5px;
+    }
+    .vid-title {
+      font-size: 14px; font-weight: 700;
+      line-height: 1.35;
+      color: var(--white);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       DETAIL VIEW
+    ═══════════════════════════════════════════════════════ */
+    .detail-wrap {
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 32px 28px 0;
+    }
+
+    /* back button */
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: none; border: none;
+      color: var(--dim); cursor: pointer;
+      font-size: 13px; font-weight: 600;
+      padding: 0 0 20px;
+      transition: color .15s;
+    }
+    .back-btn:hover { color: var(--white); }
+    .back-btn svg { width: 16px; height: 16px; fill: currentColor; }
+
+    /* main 2-col block */
+    .detail-main {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 32px;
+      align-items: start;
+      margin-bottom: 32px;
+    }
+
+    /* video player */
+    .detail-player {
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      aspect-ratio: 16/9;
+      background: #000;
+      position: relative;
+      cursor: pointer;
+    }
+    .detail-player img {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+    }
+    .detail-player-overlay {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,.3);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .big-play {
+      width: 72px; height: 72px;
+      background: rgba(255,255,255,.9);
+      border-radius: 50%;
+      display: grid; place-items: center;
+    }
+    .big-play svg { width: 32px; height: 32px; fill: var(--bg-darker); margin-left: 4px; }
+    .detail-nos {
+      position: absolute; top: 14px; left: 14px;
+      background: var(--red);
+      color: var(--white);
+      font-size: 12px; font-weight: 900;
+      padding: 3px 8px; border-radius: 5px;
+    }
+
+    /* info sidebar */
+    .detail-info { padding-top: 4px; }
+    .detail-category {
+      font-size: 12px; font-weight: 700;
+      color: var(--dim);
+      margin-bottom: 12px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .detail-title {
+      font-size: clamp(20px, 3vw, 28px);
+      font-weight: 900;
+      line-height: 1.2;
+      letter-spacing: -.3px;
+      margin-bottom: 18px;
+    }
+    .detail-desc {
+      font-size: 14px; line-height: 1.65;
+      color: var(--dim);
+      margin-bottom: 22px;
+    }
+    .share-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--bg-dark);
+      color: var(--white);
+      font-size: 14px; font-weight: 700;
+      padding: 11px 22px;
+      border-radius: 50px;
+      border: none; cursor: pointer;
+      margin-bottom: 28px;
+      transition: background .15s;
+    }
+    .share-btn:hover { background: var(--bg-darker); }
+    .share-btn svg { width: 16px; height: 16px; fill: currentColor; }
+
+    .next-label {
+      font-size: 12px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .5px;
+      color: var(--dim); margin-bottom: 10px;
+    }
+    .next-card {
+      display: flex; gap: 12px;
+      background: rgba(255,255,255,.1);
+      border-radius: var(--radius);
+      padding: 10px;
+      cursor: pointer;
+      border: 1px solid rgba(255,255,255,.12);
+      transition: background .15s;
+    }
+    .next-card:hover { background: rgba(255,255,255,.16); }
+    .next-thumb {
+      width: 86px; height: 58px;
+      border-radius: 8px;
+      overflow: hidden; flex-shrink: 0;
+    }
+    .next-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .next-title {
+      font-size: 13px; font-weight: 600;
+      line-height: 1.4;
+      align-self: center;
+    }
+
+    /* separator */
+    .detail-sep {
+      border: none;
+      border-top: 1px solid rgba(255,255,255,.15);
+      margin: 0 0 36px;
+    }
+
+    /* ── JOURNALIST SECTION ─────────────────────────────── */
+    .journalist-section {
+      max-width: 1140px;
+      margin: 0 auto 36px;
+      padding: 0 28px;
+    }
+    .journalist-section-inner {
+      background: rgba(0,0,0,.22);
+      border-radius: var(--radius-lg);
+      padding: 28px 32px;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+
+    .journalist-left {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 10px; min-width: 100px;
+    }
+    .journalist-avatar {
+      width: 80px; height: 80px; border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid rgba(255,255,255,.25);
+    }
+    .journalist-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .journalist-name-sm {
+      font-size: 13px; font-weight: 800;
+      text-align: center; line-height: 1.25;
+    }
+    .journalist-role-sm {
+      font-size: 11px; color: var(--dim);
+      text-align: center; line-height: 1.3;
+    }
+    .journalist-years {
+      font-size: 11px;
+      background: rgba(255,255,255,.12);
+      border-radius: 50px;
+      padding: 3px 10px;
+      color: var(--dim);
+      white-space: nowrap;
+    }
+
+    .journalist-right {
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .journalist-right-label {
+      font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .9px;
+      color: var(--dim2);
+      margin-bottom: 2px;
+    }
+
+    .ref-card {
+      background: rgba(255,255,255,.08);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      border: 1px solid rgba(255,255,255,.1);
+    }
+    .ref-card.highlight {
+      border-color: rgba(250,223,75,.4);
+      background: rgba(250,223,75,.07);
+    }
+    .ref-label {
+      font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .7px;
+      color: var(--dim);
+      margin-bottom: 6px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .ref-label svg { width: 12px; height: 12px; fill: currentColor; }
+    .ref-card.highlight .ref-label { color: var(--yellow); }
+    .ref-title {
+      font-size: 14px; font-weight: 800;
+      margin-bottom: 8px; line-height: 1.3;
+    }
+    .ref-text {
+      font-size: 13px; line-height: 1.65;
+      color: var(--dim);
+    }
+
+    /* more section */
+    .more-section {
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 0 28px 60px;
+    }
+    .more-label {
+      font-size: 19px; font-weight: 900;
+      margin-bottom: 20px; letter-spacing: -.2px;
+    }
+    .more-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px 18px;
+    }
+
+    /* ── RESPONSIVE ─────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .video-grid { grid-template-columns: repeat(2, 1fr); }
+      .detail-main { grid-template-columns: 1fr; }
+      .journalist-section-inner { grid-template-columns: 1fr; }
+      .journalist-left { flex-direction: row; align-items: center; }
+      .more-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 560px) {
+      .video-grid { grid-template-columns: 1fr; }
+      .more-grid { grid-template-columns: 1fr; }
+      .topbar { padding: 12px 16px; }
+      .filters, .video-grid { padding-left: 16px; padding-right: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ TOPBAR ══════════════════════════════════════════ -->
+<header class="topbar">
+  <div class="logo-pill" id="logoHome" style="cursor:pointer">
+    <span class="nos-badge">N<span class="o">O</span>S</span>
+    <span class="stories-word">stories</span>
+  </div>
+  <div class="topbar-right">
+    <button class="icon-btn" title="Zoeken">
+      <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+    </button>
+    <a class="icon-btn" href="#" title="YouTube">
+      <svg viewBox="0 0 24 24"><path d="M10 15l5.19-3L10 9v6m11.56-7.83c.13.47.22 1.1.28 1.9.07.8.1 1.49.1 2.09L22 12c0 2.19-.16 3.8-.44 4.83-.25.9-.83 1.48-1.73 1.73-.47.13-1.33.22-2.65.28-1.3.07-2.49.1-3.59.1L12 19c-4.19 0-6.8-.16-7.83-.44-.9-.25-1.48-.83-1.73-1.73-.13-.47-.22-1.1-.28-1.9-.07-.8-.1-1.49-.1-2.09L2 12c0-2.19.16-3.8.44-4.83.25-.9.83-1.48 1.73-1.73.47-.13 1.33-.22 2.65-.28 1.3-.07 2.49-.1 3.59-.1L12 5c4.19 0 6.8.16 7.83.44.9.25 1.48.83 1.73 1.73z"/></svg>
+    </a>
+    <a class="icon-btn" href="#" title="TikTok">
+      <svg viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z"/></svg>
+    </a>
+    <a class="icon-btn" href="#" title="Instagram">
+      <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+    </a>
+  </div>
+</header>
+<div class="survey-bar">
+  <span style="color:#fff; font-size:13px; font-weight:500; margin-right:10px;">Als je alles bekeken hebt op deze test-site, klik dan hier:</span>
+  <a class="survey-btn" href="https://surveys.enalyzer.com?pid=q6b4neps" target="_blank" rel="noopener">Naar de vragenlijst</a>
+</div>
+
+<!-- ══ OVERVIEW VIEW ═══════════════════════════════════ -->
+<div class="view active" id="viewOverview">
+
+  <!-- blob decoration -->
+  <div class="hero-deco"> 
+    <svg class="blobs" viewBox="0 0 1440 200" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">-->
+      <!-- large dark center blob -->
+      <!-- <ellipse cx="580" cy="130" rx="420" ry="72" fill="rgba(0,0,0,.18)" transform="rotate(-6 580 130)"/> -->
+      <!-- secondary blob right -->
+      <!-- <ellipse cx="1150" cy="80" rx="200" ry="110" fill="rgba(0,0,0,.12)" transform="rotate(12 1150 80)"/> -->
+      <!-- subtle light blob left -->
+      <!-- <ellipse cx="140" cy="100" rx="130" ry="60" fill="rgba(255,255,255,.06)" transform="rotate(-15 140 100)"/> -->
+      <!-- small accent blob -->
+      <!-- <ellipse cx="950" cy="160" rx="120" ry="40" fill="rgba(0,0,0,.1)" transform="rotate(8 950 160)"/> -->
+    </svg> 
+    <!-- sparkle stars -->
+    <svg class="sparkle sparkle-tl" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 0 L13.5 10.5 L24 12 L13.5 13.5 L12 24 L10.5 13.5 L0 12 L10.5 10.5 Z"/>
+    </svg>
+    <svg class="sparkle sparkle-br" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 0 L13.5 10.5 L24 12 L13.5 13.5 L12 24 L10.5 13.5 L0 12 L10.5 10.5 Z"/>
+    </svg>
+  </div>
+
+  <!-- filters -->
+  <div class="filters">
+    <button class="filter-pill" onclick="setFilter(this)">Kort</button>
+    <button class="filter-pill" onclick="setFilter(this)">Lang</button>
+    <div class="filter-sep"></div>
+    <button class="filter-pill active" onclick="setFilter(this)">Net binnen</button>
+    <button class="filter-pill active" onclick="setFilter(this)">Nieuws</button>
+    <button class="filter-pill active" onclick="setFilter(this)">Rewind</button>
+    <button class="filter-pill active" onclick="setFilter(this)">Onderzoek</button>
+  </div>
+
+  <!-- grid -->
+  <div class="video-grid" id="videoGrid"></div>
+
+</div>
+
+<!-- ══ DETAIL VIEW ════════════════════════════════════ -->
+<div class="view" id="viewDetail">
+  <div class="detail-wrap">
+    <button class="back-btn" id="backBtn">
+      <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+      Alle video's
+    </button>
+    <div class="detail-main">
+      <!-- player -->
+      <div class="detail-player" id="detailPlayer">
+        <img id="detailThumb" src="" alt="" />
+        <!-- <div class="detail-nos">NOS</div> -->
+        <div class="detail-player-overlay">
+          <div class="big-play">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+      </div>
+      <!-- info -->
+      <div class="detail-info">
+        <div class="detail-category" id="detailCategory"></div>
+        <div class="detail-title" id="detailTitle"></div>
+        <div class="detail-desc" id="detailDesc"></div>
+        <button class="share-btn">
+          <svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
+          Delen
+        </button>
+        <div class="next-label">Volgende video</div>
+        <div class="next-card" id="nextCard">
+          <div class="next-thumb"><img id="nextThumb" src="" alt="" /></div>
+          <div class="next-title" id="nextTitle"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- separator -->
+  <div style="max-width:1140px;margin:0 auto;padding:0 28px">
+    <hr class="detail-sep" />
+  </div>
+
+  <!-- journalist section -->
+  <div class="journalist-section">
+    <div class="journalist-section-inner" id="journalistInner"></div>
+  </div>
+
+  <!-- survey embed -->
+  <div style="padding: 0 28px 28px;">
+    <script type='text/javascript' id='enalyzer-embed' data-env='https://surveys.enalyzer.com' data-embedid='f2m6q8ks' src='https://surveys.enalyzer.com/Scripts/websitecollector.js'></script>
+  </div>
+
+  <!-- more videos -->
+  <div class="more-section">
+    <div class="more-label" id="moreLabel"></div>
+    <div class="more-grid" id="moreGrid"></div>
+  </div>
+</div>
+
+<script>
+  /* ── DATA ─────────────────────────────────────────────── */
+  const STORIES = [
+    {
+      id: 0,
+      thumb: "https://images.cdn.nos.nl/7/6/H/h/F/D/E9fp7HjoSE3PH1b3KohvShnvnJNdUSv6pKXP3Pf/0x0x1280x720-1280x720.webp",
+      category: "Rewind", date: "2 juli", duration: "12m 43s",
+      title: "Zó werden Molukkers naar Nederland gehaald: 'Mijn oma hoort op de Molukken'",
+      desc: "Pesta's, muziek, sport en ga zo maar door: je ziet de Molukse cultuur op heel veel plekken terug. 75 jaar geleden werden bijna 13.000 Molukkers naar Nederland gehaald. Maar waarom? In deze video krijg je daar antwoord op.",
+      journalist: {
+        name: "Maxime", role: "Online redacteur en presentator",
+        photo: "https://www.bloemendal.info/uploads/3.png",
+        years: "7 jaar bij NOS"
+      },
+      reflections: [
+        { highlight: false, icon: "question", label: "Waarom",
+          title: "Een nostalgisch moment",
+          text: "De opa van mijn beste vriendin vertelde ons als kind verhalen over haar jeugd op de Molukken. Ik groeide op met het gevoel dat die geschiedenis onaf was. Toen ik de kans kreeg om dit verhaal te maken, voelde dat goed." }
+      ]
+    },
+    {
+      id: 1,
+      thumb: "https://cdn.nos.nl/image/2026/02/19/1328311/1280x720a.jpg",
+      category: "Onderzoek", date: "18 februari", duration: "14m 53s",
+      title: "Veel jongeren maken seksuele intimidatie mee op school",
+      desc: "Één op de drie middelbare scholieren heeft te maken gehad met seksuele intimidatie van klasgenoten. We spraken tientallen jongeren over hun ervaringen.",
+      journalist: {
+        name: "Jeroen", role: "Beeldredacteur",
+        photo: "https://over.nos.nl/wp-content/uploads/2021/01/Jeroen-Gortworst.png",
+        years: "6 jaar bij NOS"
+      },
+      reflections: [
+        { highlight: true, icon: "heart", label: "Dit vergeet ik nooit",
+          title: "Goede, lange gesprekken",
+          text: "Na elk interview bleven de meiden nog een tijdje hangen. Niet voor extra vragen — gewoon om te praten. Alsof het gesprek iets had losgemaakt. Op een dag zaten we met zes meisjes op een schoolplein tot de conciërge ons vroeg te vertrekken. Dat is wanneer je weet dat een verhaal telt." }
+      ]
+    },
+    {
+      id: 2,
+      thumb: "https://cdn.nos.nl/image/2026/02/04/1321416/1280x720a.jpg",
+      category: "Onderzoek", date: "4 februari", duration: "24m 17s",
+      title: "Artsen in shock: meiden voor HEFTIGE buikoperaties naar Spanje",
+      desc: "Jonge meiden die soms al jaren niks kunnen eten zoeken hulp in het buitenland, voor heftige operaties die tienduizenden euro's kosten. Hoe kan het zó ver komen?",
+      journalist: {
+        name: "Rayen", role: "Online redacteur",
+        photo: "https://media.licdn.com/dms/image/v2/D4E03AQEy7vGmjYjBDg/profile-displayphoto-scale_200_200/B4EZfPorDOHgAc-/0/1751535236114?e=2147483647&v=beta&t=Uz0LD3fzwL5XQPf407SBCji_FVE7cv_uKANUbBOrQgk",
+        years: "5 jaar bij NOS"
+      },
+      reflections: [
+        { highlight: true, icon: "heart", label: "Dit vergeet ik nooit",
+          title: "Het meisje met de Instagram-map",
+          text: "Een meisje van zestien liet me haar telefoon zien. Ze had tientallen advertenties van Spaanse klinieken maandenlang bewaard in een eigen Instagram-map. Ze keek me aan en zei: 'Ik dacht dat het normaal was dat ze mij dit aanboden.' Dat is me echt bijgebleven." },
+        { highlight: false, icon: "warning", label: "De grootste uitdaging",
+          title: "Beschermen zonder te zwijgen",
+          text: "Eén gezin trok zich drie dagen voor uitzending terug. We hebben die nacht alles herschreven — namen, details, locaties — zodat hun verhaal anoniem maar waar bleef. Soms is wat je weglaat even zwaar als wat je toont." }
+      ]
+    },
+    {
+      id: 3,
+      thumb: "https://cdn.nos.nl/image/2025/11/25/1296834/1280x720a.jpg",
+      category: "Rewind", date: "25 november", duration: "14m 18s",
+      title: "Zo kwam Suriname vrij: 'Je kreeg klappen als je Surinaams sprak'",
+      desc: "In 1975 werd Suriname onafhankelijk. We spreken met mensen die de onafhankelijkheid meemaakten en vertellen wat het voor hen betekende.",
+      journalist: {
+        name: "Crystalina", role: "Online redacteur en presentator",
+        photo: "https://www.ebu.ch/files/live/sites/ebu/files/Contacts-External/C/Crystalina_Agyeman_Prempeh.jpg",
+        years: "3 jaar bij NOS"
+      },
+      reflections: [
+        { highlight: false, icon: "question", label: "Waarom",
+          title: "Geschiedenis die ik niet kende",
+          text: "Ik realiseerde me tijdens de research hoe weinig ik wist over de Surinaamse onafhankelijkheid — terwijl ik opgroeide in een multiculturele wijk waar veel Surinaamse families woonden. Dat gemis dreef me om het zo volledig mogelijk te vertellen." }
+      ]
+    },
+    {
+      id: 4,
+      thumb: "https://cdn.nos.nl/image/2025/09/26/1275472/1280x720a.jpg",
+      category: "Onderzoek", date: "26 september", duration: "10m 39s",
+      title: "ChatGPT als therapeut: 'Is mijn beste vriend'",
+      desc: "Steeds meer jongeren wenden zich tot AI voor emotionele steun. Wat betekent dat voor echte menselijke verbinding — en voor hun mentale gezondheid?",
+      journalist: {
+        name: "Crystalina", role: "Online redacteur en presentator",
+        photo: "https://www.ebu.ch/files/live/sites/ebu/files/Contacts-External/C/Crystalina_Agyeman_Prempeh.jpg",
+        years: "3 jaar bij NOS"
+      },
+      reflections: [
+        { highlight: false, icon: "question", label: "Waarom",
+          title: "Ik volgde per ongeluk een AI",
+          text: "Ik volgde maandenlang een 'persoon' op Instagram die posts maakte over mentaal welzijn. Goed geschreven, echte bronnen. Totdat ik op zoek ging naar oudere foto's en iets niet klopte. Ze bestond niet. Dat moment van beseffen — daarvoor wilde ik een verhaal maken." },
+        { highlight: true, icon: "heart", label: "Dit vergeet ik nooit",
+          title: "Een jongen die zijn AI-vriend miste",
+          text: "Een zeventienjarige vertelde me dat hij ChatGPT had afgesloten op advies van zijn ouders. Hij zei: 'Ik weet dat het raar klinkt, maar ik mis hem echt.' Hij klonk niet gek; gewoon eenzaam. Dat bleef hangen." }
+      ]
+    },
+    {
+      id: 5,
+      thumb: "https://cdn.nos.nl/image/2025/11/04/1289568/1280x720a.jpg",
+      category: "Onderzoek", date: "9 september", duration: "14m 17s",
+      title: "Meer vrouwen voelen zich onveilig na moord op Lisa",
+      desc: "Na de moord op Lisa in Rotterdam zeggen veel vrouwen dat ze hun gedrag aanpassen uit angst. We onderzoeken hoe diep dat gevoel van onveiligheid zit.",
+      journalist: {
+        name: "Semina", role: "Datajournalist",
+        photo: "https://media.licdn.com/dms/image/v2/C5603AQFIv8xwux3rHQ/profile-displayphoto-shrink_200_200/profile-displayphoto-shrink_200_200/0/1517581180668?e=2147483647&v=beta&t=1AweC-ga_UKAQZSJrLnnWv2coF2jHcV9xRhMxFsJSFY",
+        years: "6 jaar bij NOS"
+      },
+      reflections: [
+        { highlight: true, icon: "heart", label: "Dit vergeet ik nooit",
+          title: "De routes die vrouwen uit hun hoofd leren",
+          text: "Tijdens een interview tekende een vrouw haar dagelijkse route naar huis. Ze wist precies welke straten verlicht waren, waar ze kon aanbellen als het mis ging, en hoe laat de laatste tram reed. Ze had het nooit hardop gezegd. 'Ik dacht dat iedereen dit deed,' zei ze. In de data zag ik ook precies de straten die vrouwen vermijden in die buurt." }
+      ]
+    }
+  ];
+
+  const ICONS = {
+    heart:   '<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>',
+    question:'<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>',
+    warning: '<path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>'
+  };
+
+  /* ── BUILD OVERVIEW GRID ───────────────────────────── */
+  const grid = document.getElementById('videoGrid');
+  STORIES.forEach(s => {
+    const card = document.createElement('div');
+    card.className = 'vid-card';
+    card.innerHTML = `
+      <div class="vid-thumb">
+        <img src="${s.thumb}" alt="" loading="lazy" />
+      </div>
+      <div class="vid-meta">
+        <div class="vid-meta-row">${s.category} · ${s.date} · ${s.duration}</div>
+        <div class="vid-title">${s.title}</div>
+      </div>
+    `;
+    card.addEventListener('click', () => openDetail(s.id));
+    grid.appendChild(card);
+  });
+
+  /* ── OPEN DETAIL ────────────────────────────────────── */
+  function openDetail(id) {
+    const s = STORIES[id];
+    const nextId = (id + 1) % STORIES.length;
+    const next = STORIES[nextId];
+
+    // populate player + info
+    document.getElementById('detailThumb').src  = s.thumb;
+    document.getElementById('detailCategory').innerHTML =
+      `${s.category} &nbsp;·&nbsp; ${s.date} &nbsp;·&nbsp; ${s.duration}`;
+    document.getElementById('detailTitle').textContent = s.title;
+    document.getElementById('detailDesc').textContent  = s.desc;
+    document.getElementById('nextThumb').src   = next.thumb;
+    document.getElementById('nextTitle').textContent = next.title;
+
+    // next card click
+    document.getElementById('nextCard').onclick = () => openDetail(nextId);
+
+    // journalist section
+    const j = s.journalist;
+    const refsHTML = s.reflections.map(r => `
+      <div class="ref-card ${r.highlight ? 'highlight' : ''}">
+        <div class="ref-label">
+          <svg viewBox="0 0 24 24">${ICONS[r.icon]}</svg>
+          ${r.label}
+        </div>
+        <div class="ref-title">${r.title}</div>
+        <div class="ref-text">${r.text}</div>
+      </div>
+    `).join('');
+
+    document.getElementById('journalistInner').innerHTML = `
+      <div class="journalist-left">
+        <div class="journalist-avatar"><img src="${j.photo}" alt="${j.name}" /></div>
+        <div class="journalist-name-sm">${j.name}</div>
+        <div class="journalist-role-sm">${j.role}</div>
+        <div class="journalist-years">${j.years}</div>
+      </div>
+      <div class="journalist-right">
+        <div class="journalist-right-label">Perspectief op dit verhaal</div>
+        ${refsHTML}
+      </div>
+    `;
+
+    // more videos (others)
+    document.getElementById('moreLabel').textContent = `Meer ${s.category} video's`;
+    const moreGrid = document.getElementById('moreGrid');
+    moreGrid.innerHTML = '';
+    STORIES.filter(x => x.id !== id).slice(0, 3).forEach(rel => {
+      const card = document.createElement('div');
+      card.className = 'vid-card';
+      card.innerHTML = `
+        <div class="vid-thumb">
+          <img src="${rel.thumb}" alt="" loading="lazy" />
+        </div>
+        <div class="vid-meta">
+          <div class="vid-meta-row">${rel.category} · ${rel.date} · ${rel.duration}</div>
+          <div class="vid-title">${rel.title}</div>
+        </div>
+      `;
+      card.addEventListener('click', () => openDetail(rel.id));
+      moreGrid.appendChild(card);
+    });
+
+    // switch views
+    document.getElementById('viewOverview').classList.remove('active');
+    document.getElementById('viewDetail').classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /* ── NAVIGATION ─────────────────────────────────────── */
+  document.getElementById('backBtn').addEventListener('click', goHome);
+  document.getElementById('logoHome').addEventListener('click', goHome);
+
+  function goHome() {
+    document.getElementById('viewDetail').classList.remove('active');
+    document.getElementById('viewOverview').classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /* ── FILTER PILLS ───────────────────────────────────── */
+  function setFilter(el) {
+    el.classList.toggle('active');
+  }
+</script>
+</body>
+</html>
